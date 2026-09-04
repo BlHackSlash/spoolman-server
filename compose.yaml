@@ -1,0 +1,14 @@
+services:
+  spoolman-server:
+    image: ghcr.io/blhackslash/spoolman-server:latest
+    container_name: spoolman-server
+    ports:
+      - "5000:5000"
+    environment:
+      - SPOOLMAN_URL=https://spoolman.example.com
+      - AUTH_TOKEN=SUPER_SECRET_TOKEN
+      - BIND_PORT=5000
+      - DEFAULT_WEIGHT=1000.0
+      - DEFAULT_DIAMETER=1.75
+      - DEFAULT_DENSITY=1.24
+    restart: unless-stopped
