@@ -1,16 +1,25 @@
 import os
+import sys
 from flask import Flask, request, jsonify
 import requests
 
 app = Flask(__name__)
 
-# Configuration via Environment Variables
-SPOOLMAN_URL = os.environ.get("SPOOLMAN_URL", "http://192.168.1.100:7912/api/v1")
+# Mandatory Spoolman URL configuration
+base_url = os.environ.get("SPOOLMAN_URL")
+if not base_url:
+    print("FATAL ERROR: SPOOLMAN_URL environment variable is mandatory.", file=sys.stderr)
+    sys.exit(1)
+
+SPOOLMAN_URL = f"{base_url.rstrip('/')}/api/v1"
+
+# Optional/Default configurations
 BIND_HOST = os.environ.get("BIND_HOST", "0.0.0.0")
 BIND_PORT = int(os.environ.get("BIND_PORT", 5000))
 DEFAULT_WEIGHT = float(os.environ.get("DEFAULT_WEIGHT", 1000.0))
 DEFAULT_DIAMETER = float(os.environ.get("DEFAULT_DIAMETER", 1.75))
 DEFAULT_DENSITY = float(os.environ.get("DEFAULT_DENSITY", 1.24))
+AUTH_TOKEN = os.environ.get("AUTH_TOKEN")
 
 def get_or_create_vendor(name="Bambu Lab"):
     resp = requests.get(f"{SPOOLMAN_URL}/vendor").json()
@@ -36,6 +45,10 @@ def get_or_create_filament(material, color_hex, density, vendor_id):
 
 @app.route('/process_spool', methods=['POST'])
 def process_spool():
+    # Authentication check
+    if AUTH_TOKEN and request.headers.get("X-Auth-Token") != AUTH_TOKEN:
+        return jsonify({"error": "Unauthorized"}), 401
+
     data = request.json
     uid = data.get("uid")
     material = data.get("material")
